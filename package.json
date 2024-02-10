@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "test": "jest --runInBand --watchAll"
+  },
+  "dependencies": {
+    "sequelize": "^6.36.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
