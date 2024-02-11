@@ -46,7 +46,7 @@ const chrevorMatcher = {
 
 beforeAll(async () => {
   await db.sync({ force: true })
-  // TODO associate the user to their matcher
+
   await User.bulkCreate([chravis, bobert, chrevor])
   await Matcher.bulkCreate([chravisMatcher, bobertMatcher, chrevorMatcher])
 })
@@ -80,7 +80,7 @@ describe('User tests', () => {
 })
 
 describe('Matcher tests', () => {
-  test('Matchers are created', async () => {
+  test('Matchers are created with user id', async () => {
     const matchers = await Matcher.findAll()
 
     expect(matchers).toEqual(
@@ -89,6 +89,50 @@ describe('Matcher tests', () => {
         expect.objectContaining(bobertMatcher),
         expect.objectContaining(chrevorMatcher)
       ])
+    )
+  })
+
+  test('New matcher is created', async () => {
+    // Matcher being passed through the req.body
+    const newMatcher = {
+      gameName: 'Rocket League',
+      platform: 'Xbox',
+      objective: 'Grind',
+      note: 'Rank up.'
+    }
+
+    // Find user in the db creating the new matcher
+    // IDEA: On the frontend when we create the user we can probably store
+    // our User data in session storage so we don't have to keep finding the user
+    const user = await User.findOne({
+      where: {
+        userName: bobert.userName
+      }
+    })
+
+    // Create the new matcher and associate the user all in one step
+    const createMatcher = await Matcher.create({
+      ...newMatcher,
+      UserId: user.id
+    })
+
+    // Validate matcher creation and association
+    const userWithMatchers = await User.findOne({
+      where: {
+        userId: user.userId
+      },
+      include: Matcher
+    })
+
+    expect(user).toBeInstanceOf(User)
+    expect(createMatcher).toBeInstanceOf(Matcher)
+
+    expect(userWithMatchers).toBeInstanceOf(User)
+    expect(Array.isArray(userWithMatchers.Matchers)).toBe(true)
+    // Kinda hacky but we know the user already has one associated matcher
+    // Created at the start of this file
+    expect(userWithMatchers.Matchers[1]).toEqual(
+      expect.objectContaining(newMatcher)
     )
   })
 })
