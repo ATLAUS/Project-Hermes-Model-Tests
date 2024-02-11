@@ -24,25 +24,29 @@ const chravisMatcher = {
   gameName: 'Escape from Tarkov',
   platform: 'PC',
   objective: 'Grind',
-  note: 'Need roubles'
+  note: 'Need roubles',
+  UserId: 1
 }
 
 const bobertMatcher = {
   gameName: 'Palworld',
   platform: 'PC',
   objective: 'Casual',
-  note: 'Farming sim'
+  note: 'Farming sim',
+  UserId: 2
 }
 
 const chrevorMatcher = {
   gameName: 'EA FC',
   platform: 'PS4',
   objective: 'Grind',
-  note: 'Looking to run some Pro Clubs'
+  note: 'Looking to run some Pro Clubs',
+  UserId: 3
 }
 
 beforeAll(async () => {
   await db.sync({ force: true })
+  // TODO associate the user to their matcher
   await User.bulkCreate([chravis, bobert, chrevor])
   await Matcher.bulkCreate([chravisMatcher, bobertMatcher, chrevorMatcher])
 })
@@ -57,6 +61,20 @@ describe('User tests', () => {
         expect.objectContaining(bobert),
         expect.objectContaining(chrevor)
       ])
+    )
+  })
+
+  test('Test association between User and Matcher', async () => {
+    const chravisWithMatcher = await User.findOne({
+      where: {
+        userName: chravis.userName
+      },
+      include: Matcher
+    })
+
+    expect(chravisWithMatcher).toBeInstanceOf(User)
+    expect(chravisWithMatcher.Matchers[0]).toEqual(
+      expect.objectContaining(chravisMatcher)
     )
   })
 })
