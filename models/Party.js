@@ -3,9 +3,10 @@ const { db, DataTypes } = require('../db/connection')
 const Party = db.define(
   'Party',
   {
-    gameName: {
+    gameName: DataTypes.STRING,
+    status: {
       type: DataTypes.STRING,
-      defaultValue: 'test'
+      defaultValue: 'Open'
     }
   },
   {

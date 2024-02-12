@@ -8,8 +8,12 @@ User.hasMany(Matcher, {
 }) // User can have multiple Matchers
 Matcher.belongsTo(User) // Matcher belongs to one User
 
-User.belongsToMany(Party, { through: 'User_Party' })
-Party.belongsToMany(User, { through: 'User_Party' })
+// User.belongsToMany(Party, { through: 'User_Party' })
+// Party.belongsToMany(User, { through: 'User_Party' })
+
+// TESTING FOR PREVIOUS PARTY FUNCTIONALITY
+User.belongsTo(Party)
+Party.hasMany(User)
 
 module.exports = {
   User,

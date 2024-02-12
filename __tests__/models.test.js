@@ -1,6 +1,7 @@
 const { beforeAll, describe, test, expect } = require('@jest/globals')
-const { User, Matcher, Party } = require('../models')
+const { User, Matcher, Party, UserParties } = require('../models')
 const { db } = require('../db/connection')
+const { Op } = require('sequelize')
 
 const chravis = {
   userId: '123123',
@@ -24,6 +25,7 @@ const chravisMatcher = {
   gameName: 'Escape from Tarkov',
   platform: 'PC',
   objective: 'Grind',
+  partySize: 2,
   note: 'Need roubles',
   UserId: 1
 }
@@ -32,6 +34,7 @@ const bobertMatcher = {
   gameName: 'Palworld',
   platform: 'PC',
   objective: 'Casual',
+  partySize: 3,
   note: 'Farming sim',
   UserId: 2
 }
@@ -40,6 +43,7 @@ const chrevorMatcher = {
   gameName: 'EA FC',
   platform: 'PS4',
   objective: 'Grind',
+  partySize: 4,
   note: 'Looking to run some Pro Clubs',
   UserId: 3
 }
@@ -98,7 +102,8 @@ describe('Matcher tests', () => {
       gameName: 'Rocket League',
       platform: 'Xbox',
       objective: 'Grind',
-      note: 'Rank up.'
+      partySize: 2,
+      note: 'Rank up'
     }
 
     // Find user in the db creating the new matcher
@@ -133,6 +138,87 @@ describe('Matcher tests', () => {
     // Created at the start of this file
     expect(userWithMatchers.Matchers[1]).toEqual(
       expect.objectContaining(newMatcher)
+    )
+  })
+})
+
+describe('Party tests', () => {
+  test('Party is created when matches are found', async () => {
+    let party
+    // User creates a new matcher
+    // Looking to match with the EFT matcher that belongs to Chravis
+    const newMatcher = {
+      gameName: 'Escape from Tarkov',
+      platform: 'PC',
+      objective: 'Grind',
+      partySize: 2,
+      note: 'Questing',
+      UserId: 3 // associate Chrevor directly
+    }
+
+    const createdMatcher = await Matcher.create(newMatcher)
+
+    const userOne = await User.findOne({
+      where: {
+        id: newMatcher.UserId
+      }
+    })
+
+    // Find a match that ISNT created by the user associated with the newMatcher
+    const match = await Matcher.findOne({
+      where: {
+        UserId: { [Op.ne]: newMatcher.UserId },
+        gameName: newMatcher.gameName,
+        platform: newMatcher.platform
+      }
+    })
+
+    const userTwo = await User.findOne({
+      where: {
+        id: match.UserId
+      }
+    })
+
+    if (match) {
+      party = await Party.create({
+        gameName: newMatcher.gameName
+      })
+
+      // Update matcher and users activeParty field
+      await party.addUsers([userOne, userTwo])
+      await createdMatcher.update({
+        activeParty: true
+      })
+      await match.update({
+        activeParty: true
+      })
+      await userOne.update({
+        activeParty: true
+      })
+      await userTwo.update({
+        activeParty: true
+      })
+    }
+
+    // Find newly created party with associated users
+    const partyWithUsers = await Party.findOne({
+      where: {
+        id: party.id
+      },
+      include: {
+        model: User
+      }
+    })
+
+    expect(party).toBeInstanceOf(Party)
+    expect(partyWithUsers).toBeInstanceOf(Party)
+
+    expect(Array.isArray(partyWithUsers.Users)).toBe(true)
+    expect(partyWithUsers.Users).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining(chrevor),
+        expect.objectContaining(chravis)
+      ])
     )
   })
 })
